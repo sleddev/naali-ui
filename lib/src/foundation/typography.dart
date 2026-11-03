@@ -17,6 +17,9 @@ abstract final class NaaliType {
   /// Section heading inside a page.
   static const section = TextStyle(fontFamily: display, fontSize: 19, fontWeight: FontWeight.w600, letterSpacing: -0.2);
 
+  /// Title beside the back button on pushed pages.
+  static const barTitle = TextStyle(fontFamily: display, fontSize: 22, fontWeight: FontWeight.w700, letterSpacing: -0.4);
+
   /// Collapsed page title in the top bar.
   static const navTitle = TextStyle(fontFamily: display, fontSize: 17, fontWeight: FontWeight.w600);
 

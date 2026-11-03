@@ -3,7 +3,7 @@
 A Flutter UI framework in the Revolut design language: pure-black (or soft grey) canvas, solid 20px cards with no
 borders or shadows, one blue accent, pill controls that invert when selected, Inter / Inter Display type with
 balance-style figures, sheets instead of dialogs, and frosted glass only for chrome floating over content.
-The tokens are derived from the `roadss` app. Ships light and dark palettes.
+Ships light and dark palettes.
 
 ## Use
 

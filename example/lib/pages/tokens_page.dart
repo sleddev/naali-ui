@@ -51,7 +51,7 @@ class TokensPage extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: NaaliSpace.page),
           sliver: SliverList.list(children: [
             const NSectionHeader('Colour'),
-            NListGroup(dividerIndent: 16, children: [
+            NListGroup(children: [
               for (final (name, color) in colors)
                 NListItem(
                   dense: true,

@@ -77,7 +77,15 @@ class NTextField extends StatelessWidget {
 
 /// Pill search field on a raised fill, as in list headers.
 class NSearchField extends StatefulWidget {
-  const NSearchField({super.key, this.hint = 'Search', this.onChanged, this.controller, this.onTap, this.readOnly = false});
+  const NSearchField({
+    super.key,
+    this.hint = 'Search',
+    this.onChanged,
+    this.controller,
+    this.onTap,
+    this.readOnly = false,
+    this.glass = false,
+  });
 
   final String hint;
   final ValueChanged<String>? onChanged;
@@ -86,6 +94,10 @@ class NSearchField extends StatefulWidget {
   /// With [readOnly], the field acts as a button that opens a search page.
   final VoidCallback? onTap;
   final bool readOnly;
+
+  /// Translucent pill with a hairline rim, matching [NGlassIconButton], for
+  /// use in a header bar.
+  final bool glass;
 
   @override
   State<NSearchField> createState() => _NSearchFieldState();
@@ -112,8 +124,12 @@ class _NSearchFieldState extends State<NSearchField> {
   @override
   Widget build(BuildContext context) {
     final c = context.naali;
+    final pill = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(NaaliRadius.pill),
+      borderSide: widget.glass ? BorderSide(color: c.glassBorder, width: 0.6) : BorderSide.none,
+    );
     return SizedBox(
-      height: 42,
+      height: widget.glass ? 46 : 42,
       child: TextField(
         controller: _c,
         readOnly: widget.readOnly,
@@ -135,11 +151,11 @@ class _NSearchFieldState extends State<NSearchField> {
                     widget.onChanged?.call('');
                   },
                 ),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(NaaliRadius.pill), borderSide: BorderSide.none),
-          enabledBorder:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(NaaliRadius.pill), borderSide: BorderSide.none),
-          focusedBorder:
-              OutlineInputBorder(borderRadius: BorderRadius.circular(NaaliRadius.pill), borderSide: BorderSide.none),
+          filled: true,
+          fillColor: widget.glass ? c.glassFillStrong : c.surfaceRaised,
+          border: pill,
+          enabledBorder: pill,
+          focusedBorder: pill,
         ),
       ),
     );

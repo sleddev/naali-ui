@@ -39,7 +39,7 @@ class ThemeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dark = context.naali.isDark;
-    return NIconButton(
+    return NGlassIconButton(
       icon: dark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
       tooltip: dark ? 'Light mode' : 'Dark mode',
       onPressed: () => themeMode.value = dark ? ThemeMode.light : ThemeMode.dark,

@@ -59,10 +59,9 @@ class _ComponentsPageState extends State<ComponentsPage> {
     }..removeWhere((_, v) => v.isEmpty);
 
     return NCollapsingPage(
-      title: 'Components',
       tabIndex: widget.tabIndex,
+      middle: NSearchField(hint: 'Search components', glass: true, onChanged: (v) => setState(() => _query = v)),
       actions: const [ThemeToggle()],
-      header: NSearchField(hint: 'Search components', onChanged: (v) => setState(() => _query = v)),
       slivers: [
         SliverPadding(
           padding: const EdgeInsets.symmetric(horizontal: NaaliSpace.page),

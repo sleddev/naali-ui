@@ -11,10 +11,16 @@ class DemoPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Scaffold(
+        extendBodyBehindAppBar: true,
         appBar: NTopBar(title: title, actions: const [ThemeToggle()]),
-        body: ListView(
-          padding: EdgeInsets.fromLTRB(NaaliSpace.page, 0, NaaliSpace.page, MediaQuery.paddingOf(context).bottom + 32),
-          children: children,
+        // Builder so the padding comes from inside the Scaffold, which adds the
+        // bar's height to it when the body extends behind the bar.
+        body: Builder(
+          builder: (context) => ListView(
+            padding: EdgeInsets.fromLTRB(NaaliSpace.page, MediaQuery.paddingOf(context).top, NaaliSpace.page,
+                MediaQuery.paddingOf(context).bottom + 32),
+            children: children,
+          ),
         ),
       );
 }
@@ -247,6 +253,20 @@ class _ListsDemoState extends State<ListsDemo> {
             const NDetailRow(label: 'Fee', value: 'Free'),
             NDetailRow(label: 'You save', value: '€3.20', valueColor: c.success),
             NDetailRow(label: 'Arrives', value: 'Instantly', onTap: () {}),
+          ])),
+      Demo('Detail rows with links',
+          note: 'Accent value with a leading icon; no chevron.',
+          child: NDetailGroup(rows: [
+            NDetailRow(
+                label: 'Card', value: 'Virtual ··4242', icon: Icons.credit_card_rounded, valueColor: c.accent, onTap: () {}),
+            NDetailRow(
+                label: 'Payment from',
+                value: 'Personal · EUR',
+                icon: Icons.account_balance_wallet_rounded,
+                valueColor: c.accent,
+                onTap: () {}),
+            NDetailRow(
+                label: 'Statement', value: 'Download', icon: Icons.download_rounded, valueColor: c.accent, onTap: () {}),
           ])),
     ]);
   }
@@ -585,7 +605,7 @@ class _ControlsDemoState extends State<ControlsDemo> {
             const NSwitch(value: true, onChanged: null),
           ])),
       Demo('Checkbox',
-          child: NListGroup(dividerIndent: 16, children: [
+          child: NListGroup(children: [
             NListItem(
               title: 'I accept the terms',
               trailing: NCheckbox(value: _c1, onChanged: (v) => setState(() => _c1 = v)),

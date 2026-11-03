@@ -47,172 +47,158 @@ class _HomeDemoState extends State<HomeDemo> {
   @override
   Widget build(BuildContext context) {
     final c = context.naali;
-    final pad = MediaQuery.paddingOf(context);
-    return ColoredBox(
-      color: c.background,
-      child: CustomScrollView(
-        slivers: [
-          SliverPadding(
-            padding: EdgeInsets.fromLTRB(NaaliSpace.page, pad.top + 8, NaaliSpace.page, 0),
-            sliver: SliverToBoxAdapter(
-              child: Row(
-                children: [
-                  NPressable(
-                    onTap: () => _profileSheet(context),
-                    child: const NAvatar.initials('Alex Morgan', size: 40),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(child: NSearchField(readOnly: true)),
-                  const SizedBox(width: 10),
-                  NCountBadge(
-                    count: 3,
-                    child: NIconButton(icon: Icons.notifications_none_rounded, onPressed: () {
-                      showNToast(context, 'You have 3 new notifications');
-                    }),
-                  ),
-                  const SizedBox(width: 8),
-                  const ThemeToggle(),
-                ],
+    return NCollapsingPage(
+      tabIndex: widget.tabIndex,
+      leading: NPressable(
+        onTap: () => _profileSheet(context),
+        child: const NAvatar.initials('Alex Morgan', size: 46),
+      ),
+      middle: const NSearchField(readOnly: true, glass: true),
+      actions: [
+        NCountBadge(
+          count: 3,
+          child: NGlassIconButton(icon: Icons.notifications_none_rounded, onPressed: () {
+            showNToast(context, 'You have 3 new notifications');
+          }),
+        ),
+        const ThemeToggle(),
+      ],
+      slivers: [
+        SliverToBoxAdapter(child: _balance(context)),
+        SliverPadding(
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+          sliver: SliverToBoxAdapter(
+            child: NActionRow(actions: [
+              NCircleAction(
+                icon: Icons.add_rounded,
+                label: 'Add money',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TransferPage(title: 'Add money'))),
               ),
-            ),
-          ),
-          SliverToBoxAdapter(child: _balance(context)),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            sliver: SliverToBoxAdapter(
-              child: NActionRow(actions: [
-                NCircleAction(
-                  icon: Icons.add_rounded,
-                  label: 'Add money',
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TransferPage(title: 'Add money'))),
-                ),
-                NCircleAction(
-                  icon: Icons.swap_horiz_rounded,
-                  label: 'Move',
-                  onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TransferPage(title: 'Move money'))),
-                ),
-                NCircleAction(icon: Icons.account_balance_rounded, label: 'Details', onTap: () => _detailsSheet(context)),
-                NCircleAction(icon: Icons.more_horiz_rounded, label: 'More', onTap: () => _moreSheet(context)),
-              ]),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(NaaliSpace.page, 20, NaaliSpace.page, 0),
-            sliver: SliverList.list(children: [
-              if (_bannerVisible)
-                NBanner(
-                  title: 'Earn 2.25% AER on savings',
-                  message: 'Open an instant access savings vault in seconds.',
-                  actionLabel: 'Get started',
-                  onAction: () => showNToast(context, 'Vault created', tone: NToastTone.success),
-                  onClose: () => setState(() => _bannerVisible = false),
-                ),
-              NSectionHeader('Transactions', trailing: NLinkButton(label: 'See all', onPressed: () {})),
-              NListGroup(children: [
-                for (final t in transactions) _txnRow(context, t),
-              ]),
-              const NSectionHeader('Cards'),
+              NCircleAction(
+                icon: Icons.swap_horiz_rounded,
+                label: 'Move',
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const TransferPage(title: 'Move money'))),
+              ),
+              NCircleAction(icon: Icons.account_balance_rounded, label: 'Details', onTap: () => _detailsSheet(context)),
+              NCircleAction(icon: Icons.more_horiz_rounded, label: 'More', onTap: () => _moreSheet(context)),
             ]),
           ),
-          SliverToBoxAdapter(
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 210,
-                  child: PageView(
-                    controller: _cards,
-                    padEnds: true,
-                    onPageChanged: (i) => setState(() => _card = i),
-                    children: [
-                      for (final (f, l, n, frozen) in const [
-                        (NCardFinish.ocean, 'Virtual', '4242', false),
-                        (NCardFinish.midnight, 'Metal', '8810', false),
-                        (NCardFinish.sunset, 'Disposable', '1937', true),
-                      ])
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 6),
-                          child: Center(
-                            child: NPaymentCard(
-                              finish: f,
-                              label: l,
-                              last4: n,
-                              frozen: frozen,
-                              holder: 'Alex Morgan',
-                              onTap: () => showNToast(context, '$l card •• $n'),
-                            ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(NaaliSpace.page, 20, NaaliSpace.page, 0),
+          sliver: SliverList.list(children: [
+            if (_bannerVisible)
+              NBanner(
+                title: 'Earn 2.25% AER on savings',
+                message: 'Open an instant access savings vault in seconds.',
+                actionLabel: 'Get started',
+                onAction: () => showNToast(context, 'Vault created', tone: NToastTone.success),
+                onClose: () => setState(() => _bannerVisible = false),
+              ),
+            NSectionHeader('Transactions', trailing: NLinkButton(label: 'See all', onPressed: () {})),
+            NListGroup(children: [
+              for (final t in transactions) _txnRow(context, t),
+            ]),
+            const NSectionHeader('Cards'),
+          ]),
+        ),
+        SliverToBoxAdapter(
+          child: Column(
+            children: [
+              SizedBox(
+                height: 210,
+                child: PageView(
+                  controller: _cards,
+                  padEnds: true,
+                  onPageChanged: (i) => setState(() => _card = i),
+                  children: [
+                    for (final (f, l, n, frozen) in const [
+                      (NCardFinish.ocean, 'Virtual', '4242', false),
+                      (NCardFinish.midnight, 'Metal', '8810', false),
+                      (NCardFinish.sunset, 'Disposable', '1937', true),
+                    ])
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 6),
+                        child: Center(
+                          child: NPaymentCard(
+                            finish: f,
+                            label: l,
+                            last4: n,
+                            frozen: frozen,
+                            holder: 'Alex Morgan',
+                            onTap: () => showNToast(context, '$l card •• $n'),
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                NPageDots(count: 3, index: _card),
-              ],
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(NaaliSpace.page, 0, NaaliSpace.page, 0),
-            sliver: SliverList.list(children: [
-              const NSectionHeader('Spending'),
-              NChartCard(
-                title: 'Spent this ${_range.toLowerCase()}',
-                value: NMoney.format(_range == 'Week' ? 412.36 : 1873.90),
-                trailing: const NDeltaChip(text: '8%', direction: -1, positiveIsGood: false),
-                child: Column(
-                  children: [
-                    NBarChart(
-                      data: const [
-                        NBarDatum('M', 42),
-                        NBarDatum('T', 88),
-                        NBarDatum('W', 31),
-                        NBarDatum('T', 64),
-                        NBarDatum('F', 120),
-                        NBarDatum('S', 47),
-                        NBarDatum('S', 20),
-                      ],
-                      selected: _bar,
-                      onSelect: (i) => setState(() => _bar = i),
-                    ),
-                    const SizedBox(height: 16),
-                    NSegmentedControl(
-                      values: const ['Week', 'Month', 'Year'],
-                      selected: _range,
-                      label: (v) => v,
-                      onChanged: (v) => setState(() => _range = v),
-                    ),
+                      ),
                   ],
                 ),
               ),
               const SizedBox(height: 12),
-              NCard(
-                child: Row(
-                  children: [
-                    NProgressRing(
-                      value: 0.62,
-                      size: 64,
-                      color: c.success,
-                      child: Text('62%', style: NaaliType.number(15, color: c.textPrimary)),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Trip to Lisbon', style: NaaliType.headline.copyWith(color: c.textPrimary)),
-                          const SizedBox(height: 4),
-                          Text('€1,240 of €2,000', style: NaaliType.caption.copyWith(color: c.textSecondary)),
-                        ],
-                      ),
-                    ),
-                    Icon(Icons.chevron_right_rounded, color: c.textTertiary),
-                  ],
-                ),
-              ),
-            ]),
+              NPageDots(count: 3, index: _card),
+            ],
           ),
-          SliverToBoxAdapter(child: SizedBox(height: pad.bottom + 110)),
-        ],
-      ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(NaaliSpace.page, 0, NaaliSpace.page, 0),
+          sliver: SliverList.list(children: [
+            const NSectionHeader('Spending'),
+            NChartCard(
+              title: 'Spent this ${_range.toLowerCase()}',
+              value: NMoney.format(_range == 'Week' ? 412.36 : 1873.90),
+              trailing: const NDeltaChip(text: '8%', direction: -1, positiveIsGood: false),
+              child: Column(
+                children: [
+                  NBarChart(
+                    data: const [
+                      NBarDatum('M', 42),
+                      NBarDatum('T', 88),
+                      NBarDatum('W', 31),
+                      NBarDatum('T', 64),
+                      NBarDatum('F', 120),
+                      NBarDatum('S', 47),
+                      NBarDatum('S', 20),
+                    ],
+                    selected: _bar,
+                    onSelect: (i) => setState(() => _bar = i),
+                  ),
+                  const SizedBox(height: 16),
+                  NSegmentedControl(
+                    values: const ['Week', 'Month', 'Year'],
+                    selected: _range,
+                    label: (v) => v,
+                    onChanged: (v) => setState(() => _range = v),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            NCard(
+              child: Row(
+                children: [
+                  NProgressRing(
+                    value: 0.62,
+                    size: 64,
+                    color: c.success,
+                    child: Text('62%', style: NaaliType.number(15, color: c.textPrimary)),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Trip to Lisbon', style: NaaliType.headline.copyWith(color: c.textPrimary)),
+                        const SizedBox(height: 4),
+                        Text('€1,240 of €2,000', style: NaaliType.caption.copyWith(color: c.textSecondary)),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, color: c.textTertiary),
+                ],
+              ),
+            ),
+          ]),
+        ),
+      ],
     );
   }
 
