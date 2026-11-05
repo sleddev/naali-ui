@@ -8,6 +8,7 @@ import '../foundation/typography.dart';
 import 'pressable.dart';
 
 /// Rounded linear progress (budgets, savings goals). Animates between values.
+/// Fills the available width, so it needs a bounded width (not a bare [Row] child).
 class NProgressBar extends StatelessWidget {
   const NProgressBar({super.key, required this.value, this.color, this.height = 8});
   final double value;
@@ -19,7 +20,10 @@ class NProgressBar extends StatelessWidget {
     final c = context.naali;
     return ClipRRect(
       borderRadius: BorderRadius.circular(height),
+      // Full width even under loose constraints (e.g. a start-aligned Column);
+      // otherwise the Stack would shrink the track to the filled fraction.
       child: SizedBox(
+        width: double.infinity,
         height: height,
         child: TweenAnimationBuilder<double>(
           tween: Tween(end: value.clamp(0.0, 1.0)),
