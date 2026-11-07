@@ -18,6 +18,7 @@ class NTextField extends StatelessWidget {
     this.error,
     this.prefixIcon,
     this.suffix,
+    this.suffixText,
     this.obscure = false,
     this.keyboardType,
     this.textInputAction,
@@ -26,7 +27,10 @@ class NTextField extends StatelessWidget {
     this.autofocus = false,
     this.enabled = true,
     this.maxLines = 1,
+    this.minLines,
     this.inputFormatters,
+    this.textCapitalization = TextCapitalization.none,
+    this.focusNode,
   });
 
   final TextEditingController? controller;
@@ -36,6 +40,9 @@ class NTextField extends StatelessWidget {
   final String? error;
   final IconData? prefixIcon;
   final Widget? suffix;
+
+  /// Unit shown at the end of the value ("hp", "kg").
+  final String? suffixText;
   final bool obscure;
   final TextInputType? keyboardType;
   final TextInputAction? textInputAction;
@@ -44,13 +51,18 @@ class NTextField extends StatelessWidget {
   final bool autofocus;
   final bool enabled;
   final int maxLines;
+  final int? minLines;
   final List<TextInputFormatter>? inputFormatters;
+  final TextCapitalization textCapitalization;
+  final FocusNode? focusNode;
 
   @override
   Widget build(BuildContext context) {
     final c = context.naali;
     return TextField(
       controller: controller,
+      focusNode: focusNode,
+      textCapitalization: textCapitalization,
       obscureText: obscure,
       keyboardType: keyboardType,
       textInputAction: textInputAction,
@@ -59,6 +71,7 @@ class NTextField extends StatelessWidget {
       autofocus: autofocus,
       enabled: enabled,
       maxLines: maxLines,
+      minLines: minLines,
       inputFormatters: inputFormatters,
       style: NaaliType.bodyLarge.copyWith(color: c.textPrimary, height: 1.25),
       decoration: InputDecoration(
@@ -70,6 +83,8 @@ class NTextField extends StatelessWidget {
         errorStyle: NaaliType.footnote.copyWith(color: c.danger),
         prefixIcon: prefixIcon == null ? null : Icon(prefixIcon, color: c.textSecondary, size: 22),
         suffixIcon: suffix,
+        suffixText: suffixText,
+        suffixStyle: NaaliType.bodyLarge.copyWith(color: c.textSecondary, height: 1.25),
       ),
     );
   }

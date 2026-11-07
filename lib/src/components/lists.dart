@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../foundation/colors.dart';
 import '../foundation/tokens.dart';
 import '../foundation/typography.dart';
+import 'controls.dart';
 
 /// Sentence-case section heading with an optional trailing widget (e.g. "See all").
 class NSectionHeader extends StatelessWidget {
@@ -37,6 +38,7 @@ class NListItem extends StatelessWidget {
   const NListItem({
     super.key,
     required this.title,
+    this.titleSuffix,
     this.subtitle,
     this.leading,
     this.trailing,
@@ -47,9 +49,13 @@ class NListItem extends StatelessWidget {
     this.chevron = false,
     this.destructive = false,
     this.dense = false,
+    this.subtitleMaxLines = 2,
   });
 
   final String title;
+
+  /// Small widget right after the title, e.g. a favourite star or an [NTag].
+  final Widget? titleSuffix;
   final String? subtitle;
   final Widget? leading;
   final Widget? trailing;
@@ -60,6 +66,9 @@ class NListItem extends StatelessWidget {
   final bool chevron;
   final bool destructive;
   final bool dense;
+
+  /// Raise for explanatory subtitles (settings) that shouldn't be cut off.
+  final int subtitleMaxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -75,17 +84,24 @@ class NListItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: NaaliType.rowTitle.copyWith(color: destructive ? c.danger : c.textPrimary),
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: NaaliType.rowTitle.copyWith(color: destructive ? c.danger : c.textPrimary),
+                      ),
+                    ),
+                    if (titleSuffix != null) ...[const SizedBox(width: 4), titleSuffix!],
+                  ],
                 ),
                 if (subtitle != null) ...[
                   const SizedBox(height: 3),
                   Text(
                     subtitle!,
-                    maxLines: 2,
+                    maxLines: subtitleMaxLines,
                     overflow: TextOverflow.ellipsis,
                     style: NaaliType.caption.copyWith(color: c.textSecondary, fontWeight: FontWeight.w400),
                   ),
@@ -134,6 +150,38 @@ class NListItem extends StatelessWidget {
   }
 }
 
+/// [NListItem] with a trailing [NSwitch]; tapping anywhere on the row toggles it.
+class NSwitchListItem extends StatelessWidget {
+  const NSwitchListItem({
+    super.key,
+    required this.title,
+    required this.value,
+    required this.onChanged,
+    this.subtitle,
+    this.leading,
+    this.subtitleMaxLines = 2,
+  });
+
+  final String title;
+  final String? subtitle;
+  final Widget? leading;
+  final int subtitleMaxLines;
+  final bool value;
+
+  /// Null disables the row.
+  final ValueChanged<bool>? onChanged;
+
+  @override
+  Widget build(BuildContext context) => NListItem(
+        title: title,
+        subtitle: subtitle,
+        leading: leading,
+        subtitleMaxLines: subtitleMaxLines,
+        onTap: onChanged == null ? null : () => onChanged!(!value),
+        trailing: NSwitch(value: value, onChanged: onChanged),
+      );
+}
+
 /// Card of rows. Rows are separated by space alone; set [dividers] for
 /// hairlines inset past the leading avatar.
 class NListGroup extends StatelessWidget {
@@ -144,6 +192,7 @@ class NListGroup extends StatelessWidget {
     this.dividers = false,
     this.dividerIndent = 70,
     this.title,
+    this.color,
   });
 
   final List<Widget> children;
@@ -156,11 +205,14 @@ class NListGroup extends StatelessWidget {
   /// Optional quiet heading inside the card ("Today", "Address", "Features").
   final String? title;
 
+  /// Card fill; defaults to the surface colour. Use `surfaceRaised` inside sheets.
+  final Color? color;
+
   @override
   Widget build(BuildContext context) {
     final c = context.naali;
     final group = Material(
-      color: c.surface,
+      color: color ?? c.surface,
       borderRadius: BorderRadius.circular(NaaliRadius.card),
       clipBehavior: Clip.antiAlias,
       child: Padding(
@@ -214,41 +266,43 @@ class NDetailRow extends StatelessWidget {
     final color = valueColor ?? c.textPrimary;
     final row = Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-      // Loose flexibles plus spaceBetween: the label keeps its width, the value
-      // hugs the right edge, and long values may take up to two thirds.
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Flexible(child: Text(label, style: NaaliType.bodyLarge.copyWith(color: c.textSecondary, height: 1.2))),
-          Flexible(
-            flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (icon != null) ...[Icon(icon, size: 20, color: color), const SizedBox(width: 10)],
-                  Flexible(
-                    child: Text(
-                      value,
-                      textAlign: TextAlign.end,
-                      style: NaaliType.bodyLarge.copyWith(
-                        height: 1.2,
-                        color: color,
-                        fontFeatures: const [FontFeature.tabularFigures()],
+      // The value is laid out first, at its natural width but at most two thirds
+      // of the row, and hugs the right edge; the label takes whatever is left.
+      // (Two loose Flexibles would cap the label at a third even next to a short value.)
+      child: LayoutBuilder(
+        builder: (context, box) => Row(
+          children: [
+            Expanded(child: Text(label, style: NaaliType.bodyLarge.copyWith(color: c.textSecondary, height: 1.2))),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: box.maxWidth * 2 / 3),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (icon != null) ...[Icon(icon, size: 20, color: color), const SizedBox(width: 10)],
+                    Flexible(
+                      child: Text(
+                        value,
+                        textAlign: TextAlign.end,
+                        style: NaaliType.bodyLarge.copyWith(
+                          height: 1.2,
+                          color: color,
+                          fontFeatures: const [FontFeature.tabularFigures()],
+                        ),
                       ),
                     ),
-                  ),
-                  if (trailing != null) ...[const SizedBox(width: 8), trailing!],
-                  if (onTap != null && icon == null) ...[
-                    const SizedBox(width: 4),
-                    Icon(Icons.chevron_right_rounded, size: 20, color: c.textTertiary),
+                    if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+                    if (onTap != null && icon == null) ...[
+                      const SizedBox(width: 4),
+                      Icon(Icons.chevron_right_rounded, size: 20, color: c.textTertiary),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
     return onTap == null ? row : InkWell(onTap: onTap, child: row);

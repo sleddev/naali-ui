@@ -10,10 +10,23 @@ import 'pressable.dart';
 /// Rounded linear progress (budgets, savings goals). Animates between values.
 /// Fills the available width, so it needs a bounded width (not a bare [Row] child).
 class NProgressBar extends StatelessWidget {
-  const NProgressBar({super.key, required this.value, this.color, this.height = 8});
+  const NProgressBar({
+    super.key,
+    required this.value,
+    this.color,
+    this.trackColor,
+    this.height = 8,
+    this.animate = true,
+  });
   final double value;
   final Color? color;
+
+  /// Defaults to `surfaceRaised`; pass something lighter for bars on glass or raised cards.
+  final Color? trackColor;
   final double height;
+
+  /// False for values that already update smoothly (live readouts), so the bar doesn't lag behind.
+  final bool animate;
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +40,11 @@ class NProgressBar extends StatelessWidget {
         height: height,
         child: TweenAnimationBuilder<double>(
           tween: Tween(end: value.clamp(0.0, 1.0)),
-          duration: NaaliMotion.slow,
+          duration: animate ? NaaliMotion.slow : Duration.zero,
           curve: NaaliMotion.curve,
           builder: (context, v, _) => Stack(
             children: [
-              Positioned.fill(child: ColoredBox(color: c.surfaceRaised)),
+              Positioned.fill(child: ColoredBox(color: trackColor ?? c.surfaceRaised)),
               FractionallySizedBox(
                 widthFactor: v,
                 heightFactor: 1,

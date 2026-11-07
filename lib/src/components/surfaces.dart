@@ -51,24 +51,31 @@ class NGlass extends StatelessWidget {
     this.radius = 22,
     this.blur = 24,
     this.strong = false,
+    this.tint,
+    this.margin,
     this.onTap,
   });
 
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? margin;
   final double radius;
   final double blur;
   final bool strong;
+
+  /// Washes the frost with a hint of colour, e.g. warning for an alert floating over a map.
+  final Color? tint;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final c = context.naali;
     final br = BorderRadius.circular(radius);
+    final fill = strong ? c.glassFillStrong : c.glassFill;
     final decorated = DecoratedBox(
       decoration: BoxDecoration(
         borderRadius: br,
-        color: strong ? c.glassFillStrong : c.glassFill,
+        color: tint == null ? fill : Color.alphaBlend(tint!.withValues(alpha: 0.10), fill),
         border: Border.all(color: c.glassBorder, width: 0.6),
       ),
       child: Padding(padding: padding, child: child),
@@ -83,7 +90,7 @@ class NGlass extends StatelessWidget {
               : BackdropFilter(filter: filter, child: decorated),
     );
     if (onTap != null) out = NPressable(onTap: onTap, scale: 0.95, child: out);
-    return out;
+    return margin == null ? out : Padding(padding: margin!, child: out);
   }
 }
 
@@ -306,12 +313,22 @@ class _RenderShaderBlur extends RenderBox {
 
 /// Circular glass icon button for headers and for use over imagery or maps.
 class NGlassIconButton extends StatelessWidget {
-  const NGlassIconButton({super.key, required this.icon, required this.onPressed, this.size = 46, this.tooltip});
+  const NGlassIconButton({
+    super.key,
+    required this.icon,
+    required this.onPressed,
+    this.size = 46,
+    this.tooltip,
+    this.color,
+  });
 
   final IconData icon;
   final VoidCallback? onPressed;
   final double size;
   final String? tooltip;
+
+  /// Icon colour; defaults to the primary text colour.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {
@@ -322,9 +339,49 @@ class NGlassIconButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         strong: true,
         onTap: onPressed,
-        child: Center(child: Icon(icon, size: size * 0.48, color: context.naali.textPrimary)),
+        child: Center(child: Icon(icon, size: size * 0.48, color: color ?? context.naali.textPrimary)),
       ),
     );
     return tooltip == null ? btn : Tooltip(message: tooltip!, child: btn);
+  }
+}
+
+/// Canvas for full-bleed pages that don't use [NCollapsingPage] (onboarding,
+/// story-style recaps): paints the background, groups the child's backdrop
+/// filters, and fades the status-bar area so scrolled content never collides
+/// with the clock and icons.
+class NPageBackground extends StatelessWidget {
+  const NPageBackground({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = context.naali.background;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: bg),
+        BackdropGroup(child: child),
+        Positioned(
+          top: 0,
+          left: 0,
+          right: 0,
+          height: MediaQuery.paddingOf(context).top + 12,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: const [0, 0.7, 1],
+                  colors: [bg, bg.withValues(alpha: 0.9), bg.withValues(alpha: 0)],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

@@ -7,12 +7,22 @@ import 'pressable.dart';
 
 /// Pill filter chip: inverse (white on dark) when selected, raised grey otherwise.
 class NPillChip extends StatelessWidget {
-  const NPillChip({super.key, required this.label, required this.selected, required this.onTap, this.icon});
+  const NPillChip({
+    super.key,
+    required this.label,
+    required this.selected,
+    required this.onTap,
+    this.icon,
+    this.trailingIcon,
+  });
 
   final String label;
   final bool selected;
   final VoidCallback? onTap;
   final IconData? icon;
+
+  /// After the label, e.g. a ▾ for a filter chip that opens a picker.
+  final IconData? trailingIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +34,7 @@ class NPillChip extends StatelessWidget {
       semanticLabel: label,
       child: AnimatedContainer(
         duration: NaaliMotion.fast,
-        padding: EdgeInsets.fromLTRB(icon == null ? 16 : 12, 9, 16, 9),
+        padding: EdgeInsets.fromLTRB(icon == null ? 16 : 12, 9, trailingIcon == null ? 16 : 10, 9),
         decoration: ShapeDecoration(shape: const StadiumBorder(), color: selected ? c.inverse : c.surfaceRaised),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -35,6 +45,7 @@ class NPillChip extends StatelessWidget {
               style: NaaliType.callout.copyWith(fontWeight: FontWeight.w500, color: fg, height: 1.2),
               child: Text(label),
             ),
+            if (trailingIcon != null) ...[const SizedBox(width: 2), Icon(trailingIcon, size: 18, color: fg)],
           ],
         ),
       ),
@@ -145,18 +156,28 @@ class NSegmentedControl<T> extends StatelessWidget {
     required this.label,
     required this.onChanged,
     this.height = 40,
+    this.icon,
+    this.onDeselect,
   });
 
   final List<T> values;
-  final T selected;
+
+  /// Null shows no thumb (nothing chosen yet).
+  final T? selected;
   final String Function(T) label;
   final ValueChanged<T> onChanged;
   final double height;
 
+  /// Optional icon before each label.
+  final IconData? Function(T)? icon;
+
+  /// Makes the choice optional: tapping the selected segment calls this.
+  final VoidCallback? onDeselect;
+
   @override
   Widget build(BuildContext context) {
     final c = context.naali;
-    final index = values.indexOf(selected);
+    final index = selected == null ? -1 : values.indexOf(selected as T);
     return Container(
       height: height,
       padding: const EdgeInsets.all(3),
@@ -169,17 +190,21 @@ class NSegmentedControl<T> extends StatelessWidget {
               AnimatedPositioned(
                 duration: NaaliMotion.normal,
                 curve: NaaliMotion.curve,
-                left: w * index,
+                left: w * (index < 0 ? 0 : index),
                 top: 0,
                 bottom: 0,
                 width: w,
-                child: DecoratedBox(
-                  decoration: ShapeDecoration(
-                    shape: const StadiumBorder(),
-                    color: c.isDark ? const Color(0xFF3A3B41) : Colors.white,
-                    shadows: c.isDark
-                        ? null
-                        : const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 1))],
+                child: AnimatedOpacity(
+                  opacity: index < 0 ? 0 : 1,
+                  duration: NaaliMotion.fast,
+                  child: DecoratedBox(
+                    decoration: ShapeDecoration(
+                      shape: const StadiumBorder(),
+                      color: c.isDark ? const Color(0xFF3A3B41) : Colors.white,
+                      shadows: c.isDark
+                          ? null
+                          : const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 1))],
+                    ),
                   ),
                 ),
               ),
@@ -193,19 +218,30 @@ class NSegmentedControl<T> extends StatelessWidget {
                         child: GestureDetector(
                           behavior: HitTestBehavior.opaque,
                           onTap: () {
-                            if (i == index) return;
+                            if (i == index && onDeselect == null) return;
                             NaaliHaptics.tap();
-                            onChanged(values[i]);
+                            i == index ? onDeselect!() : onChanged(values[i]);
                           },
                           child: Center(
-                            child: AnimatedDefaultTextStyle(
-                              duration: NaaliMotion.fast,
-                              style: NaaliType.callout.copyWith(
-                                fontWeight: FontWeight.w600,
-                                height: 1.1,
-                                color: i == index ? c.textPrimary : c.textSecondary,
-                              ),
-                              child: Text(label(values[i]), maxLines: 1, overflow: TextOverflow.ellipsis),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                if (icon?.call(values[i]) case final ic?) ...[
+                                  Icon(ic, size: 18, color: i == index ? c.textPrimary : c.textSecondary),
+                                  const SizedBox(width: 6),
+                                ],
+                                Flexible(
+                                  child: AnimatedDefaultTextStyle(
+                                    duration: NaaliMotion.fast,
+                                    style: NaaliType.callout.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.1,
+                                      color: i == index ? c.textPrimary : c.textSecondary,
+                                    ),
+                                    child: Text(label(values[i]), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ),

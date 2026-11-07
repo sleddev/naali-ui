@@ -7,6 +7,8 @@ import '../foundation/tokens.dart';
 import '../foundation/typography.dart';
 import 'avatar.dart';
 import 'buttons.dart';
+import 'inputs.dart';
+import 'pressable.dart';
 
 /// Solid modal bottom sheet with a grabber. Dialogs in Naali are sheets.
 Future<T?> showNSheet<T>(BuildContext context, {required WidgetBuilder builder, bool scrollControlled = true}) {
@@ -22,7 +24,8 @@ Future<T?> showNSheet<T>(BuildContext context, {required WidgetBuilder builder, 
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(ctx).bottom),
       child: ClipRRect(
         borderRadius: const BorderRadius.vertical(top: Radius.circular(NaaliRadius.sheet)),
-        child: ColoredBox(
+        // Material rather than a ColoredBox, so list rows in the sheet show their ink.
+        child: Material(
           color: c.surface,
           child: SafeArea(
             top: false,
@@ -126,6 +129,58 @@ Future<bool> showNConfirmSheet(
   return ok ?? false;
 }
 
+/// Single text field in a sheet. Resolves to the trimmed text, or [hint] when
+/// left empty and a hint is given; null on cancel.
+Future<String?> showNTextSheet(
+  BuildContext context, {
+  required String title,
+  required String confirmLabel,
+  String initial = '',
+  String? hint,
+  String? label,
+  String cancelLabel = 'Cancel',
+  TextCapitalization textCapitalization = TextCapitalization.sentences,
+}) {
+  final controller = TextEditingController(text: initial);
+  String? result() {
+    final v = controller.text.trim();
+    return v.isEmpty ? hint : v;
+  }
+
+  return showNSheet<String>(
+    context,
+    builder: (ctx) => Padding(
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          NSheetHeader(title, padding: EdgeInsets.zero),
+          const SizedBox(height: 16),
+          NTextField(
+            controller: controller,
+            hint: hint,
+            label: label,
+            autofocus: true,
+            textCapitalization: textCapitalization,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => Navigator.pop(ctx, result()),
+          ),
+          const SizedBox(height: 20),
+          NButton(label: confirmLabel, expand: true, onPressed: () => Navigator.pop(ctx, result())),
+          const SizedBox(height: 8),
+          NButton(
+            label: cancelLabel,
+            variant: NButtonVariant.secondary,
+            expand: true,
+            onPressed: () => Navigator.pop(ctx),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class NSheetAction<T> {
   const NSheetAction({
     required this.value,
@@ -145,7 +200,13 @@ class NSheetAction<T> {
 }
 
 /// List of actions in a sheet. Resolves to the chosen value.
-Future<T?> showNActionSheet<T>(BuildContext context, {String? title, required List<NSheetAction<T>> actions}) =>
+/// [message] is a quiet note under the title ("Only use these when safely stopped.").
+Future<T?> showNActionSheet<T>(
+  BuildContext context, {
+  String? title,
+  String? message,
+  required List<NSheetAction<T>> actions,
+}) =>
     showNSheet<T>(
       context,
       builder: (ctx) {
@@ -156,7 +217,7 @@ Future<T?> showNActionSheet<T>(BuildContext context, {String? title, required Li
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (title != null) NSheetHeader(title),
+              if (title != null) NSheetHeader(title, subtitle: message),
               for (final a in actions)
                 ListTile(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NaaliRadius.field)),
@@ -184,6 +245,8 @@ void showNToast(
   NToastTone tone = NToastTone.neutral,
   IconData? icon,
   Duration duration = const Duration(milliseconds: 2600),
+  String? actionLabel,
+  VoidCallback? onAction,
 }) {
   final overlay = Overlay.of(context, rootOverlay: true);
   late OverlayEntry entry;
@@ -194,6 +257,8 @@ void showNToast(
       icon: icon,
       duration: duration,
       colors: context.naali,
+      actionLabel: actionLabel,
+      onAction: onAction,
       onDone: () => entry.remove(),
     ),
   );
@@ -208,6 +273,8 @@ class _Toast extends StatefulWidget {
     required this.duration,
     required this.colors,
     required this.onDone,
+    this.actionLabel,
+    this.onAction,
   });
 
   final String message;
@@ -216,6 +283,8 @@ class _Toast extends StatefulWidget {
   final Duration duration;
   final NaaliColors colors;
   final VoidCallback onDone;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   @override
   State<_Toast> createState() => _ToastState();
@@ -285,6 +354,24 @@ class _ToastState extends State<_Toast> with SingleTickerProviderStateMixin {
                         ),
                       ),
                     ),
+                    if (widget.actionLabel != null) ...[
+                      const SizedBox(width: 12),
+                      NPressable(
+                        onTap: () {
+                          _dismiss();
+                          widget.onAction?.call();
+                        },
+                        scale: 0.95,
+                        semanticLabel: widget.actionLabel,
+                        child: Text(
+                          widget.actionLabel!,
+                          style: NaaliType.callout.copyWith(
+                            color: c.isDark ? c.accent : c.onInverse,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
