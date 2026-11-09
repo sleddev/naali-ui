@@ -249,6 +249,8 @@ void showNToast(
   VoidCallback? onAction,
 }) {
   final overlay = Overlay.of(context, rootOverlay: true);
+  // Read now: the toast outlives the caller (e.g. a popped route), so its context can't be used in the builder.
+  final colors = context.naali;
   late OverlayEntry entry;
   entry = OverlayEntry(
     builder: (_) => _Toast(
@@ -256,7 +258,7 @@ void showNToast(
       tone: tone,
       icon: icon,
       duration: duration,
-      colors: context.naali,
+      colors: colors,
       actionLabel: actionLabel,
       onAction: onAction,
       onDone: () => entry.remove(),
