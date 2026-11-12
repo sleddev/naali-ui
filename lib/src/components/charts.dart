@@ -275,6 +275,94 @@ class NBreakdownBar extends StatelessWidget {
   }
 }
 
+/// Two counts that share one whole (left vs right turns, wins vs losses) as
+/// one bar, labelled with name and figure at both ends.
+class NSplitBar extends StatelessWidget {
+  const NSplitBar({
+    super.key,
+    required this.leftLabel,
+    required this.left,
+    required this.rightLabel,
+    required this.right,
+    this.leftColor,
+    this.rightColor,
+    this.height = NaaliSpace.sm,
+    this.format,
+  });
+
+  final String leftLabel;
+  final num left;
+  final String rightLabel;
+  final num right;
+
+  /// Defaults to the accent.
+  final Color? leftColor;
+
+  /// Defaults to `chartMuted`.
+  final Color? rightColor;
+  final double height;
+
+  /// Formats the figures; defaults to `toString`.
+  final String Function(num)? format;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.naali;
+    final total = left + right;
+    final share = total <= 0 ? 0.5 : left / total;
+    String fmt(num v) => format?.call(v) ?? '$v';
+    final name = NaaliType.caption.copyWith(color: c.textSecondary);
+    final figure = NaaliType.number(17, color: c.textPrimary);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(NaaliRadius.pill),
+          child: SizedBox(
+            height: height,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(flex: (share * 1000).round().clamp(1, 999), child: ColoredBox(color: leftColor ?? c.accent)),
+                SizedBox(width: NaaliSpace.xxs, child: ColoredBox(color: c.surface)),
+                Expanded(
+                  flex: ((1 - share) * 1000).round().clamp(1, 999),
+                  child: ColoredBox(color: rightColor ?? c.chartMuted),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: NaaliSpace.sm),
+        Row(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Flexible(child: Text(leftLabel, style: name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  const SizedBox(width: NaaliSpace.xs),
+                  Text(fmt(left), style: figure),
+                ],
+              ),
+            ),
+            const SizedBox(width: NaaliSpace.md),
+            Expanded(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text(fmt(right), style: figure),
+                  const SizedBox(width: NaaliSpace.xs),
+                  Flexible(child: Text(rightLabel, style: name, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 /// One line of a [NChartTip]: an optional series swatch and name, then the value.
 class NChartTipRow {
   const NChartTipRow(this.value, {this.label, this.color, this.dashed = false});
