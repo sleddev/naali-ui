@@ -189,6 +189,7 @@ class NSheetAction<T> {
     this.subtitle,
     this.destructive = false,
     this.selected = false,
+    this.leading,
   });
 
   final T value;
@@ -197,6 +198,9 @@ class NSheetAction<T> {
   final IconData icon;
   final bool destructive;
   final bool selected;
+
+  /// Replaces the [icon] avatar with any widget, such as an emoji avatar.
+  final Widget? leading;
 }
 
 /// List of actions in a sheet. Resolves to the chosen value.
@@ -221,7 +225,7 @@ Future<T?> showNActionSheet<T>(
               for (final a in actions)
                 ListTile(
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(NaaliRadius.field)),
-                  leading: NAvatar.icon(a.icon, color: a.destructive ? c.danger : null),
+                  leading: a.leading ?? NAvatar.icon(a.icon, color: a.destructive ? c.danger : null),
                   title: Text(a.label, style: a.destructive ? TextStyle(color: c.danger) : null),
                   subtitle: a.subtitle == null ? null : Text(a.subtitle!),
                   trailing: a.selected ? Icon(Icons.check_rounded, color: c.accent) : null,
