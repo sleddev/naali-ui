@@ -77,6 +77,32 @@ class _Grabber extends StatelessWidget {
       );
 }
 
+/// Lifts Naali cards and controls one surface step, for content inside a sheet. A sheet is
+/// the card colour, so an [NCard] or [NListGroup] on it would otherwise vanish into it; under
+/// this, cards take the raised colour and the controls on them (fields, chips, tracks) step up
+/// once more.
+class NOnSheet extends StatelessWidget {
+  const NOnSheet({super.key, required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context);
+    final c = context.naali;
+    final lifted = c.copyWith(
+      surface: c.surfaceRaised,
+      surfaceRaised: c.chartMuted,
+      // The dark thumb sits close to chartMuted, so it steps up too; the light one is already white.
+      segmentThumb: c.isDark ? Color.alphaBlend(Colors.white.withValues(alpha: 0.12), c.segmentThumb) : null,
+    );
+    return Theme(
+      // Keeps the app's other theme extensions; the lifted palette replaces the Naali one.
+      data: t.copyWith(extensions: [...t.extensions.values, lifted]),
+      child: child,
+    );
+  }
+}
+
 /// Title (and optional note) at the top of a sheet.
 class NSheetHeader extends StatelessWidget {
   const NSheetHeader(this.title, {super.key, this.subtitle, this.padding = const EdgeInsets.fromLTRB(16, 4, 16, 8)});
