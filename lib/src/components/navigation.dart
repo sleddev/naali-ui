@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -315,6 +316,16 @@ class NTopBar extends StatefulWidget implements PreferredSizeWidget {
 
   @override
   Size get preferredSize => const Size.fromHeight(_kBarHeight);
+
+  /// Where a body that scrolls under an [NTopBar] (`Scaffold.extendBodyBehindAppBar`) should
+  /// start its content: below the status bar and the bar.
+  ///
+  /// Works from a context above the Scaffold or inside its body. Inside the body the Scaffold
+  /// strips the status-bar view padding, but `padding.top` then carries the full bar height.
+  static double contentInset(BuildContext context) => math.max(
+        MediaQuery.viewPaddingOf(context).top + _kBarHeight,
+        MediaQuery.paddingOf(context).top,
+      );
 
   @override
   State<NTopBar> createState() => _NTopBarState();
