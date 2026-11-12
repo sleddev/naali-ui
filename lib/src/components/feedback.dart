@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../foundation/colors.dart';
 import '../foundation/tokens.dart';
 import '../foundation/typography.dart';
+import 'buttons.dart';
 import 'pressable.dart';
 
 /// Rounded linear progress (budgets, savings goals). Animates between values.
@@ -240,6 +241,34 @@ class NEmptyState extends StatelessWidget {
       ),
     );
   }
+}
+
+/// [NEmptyState] for a failed load: what went wrong, and a retry button when [onRetry] is given.
+class NErrorState extends StatelessWidget {
+  const NErrorState({
+    super.key,
+    required this.message,
+    this.onRetry,
+    this.title = 'Something went wrong',
+    this.icon = Icons.cloud_off_rounded,
+    this.retryLabel = 'Try again',
+  });
+
+  final String message;
+  final VoidCallback? onRetry;
+  final String title;
+  final IconData icon;
+  final String retryLabel;
+
+  @override
+  Widget build(BuildContext context) => NEmptyState(
+        icon: icon,
+        title: title,
+        message: message,
+        action: onRetry == null
+            ? null
+            : NButton.secondary(label: retryLabel, size: NButtonSize.medium, onPressed: onRetry),
+      );
 }
 
 enum NBannerTone { info, success, warning, danger }
