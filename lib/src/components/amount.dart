@@ -83,6 +83,7 @@ class NStatValue extends StatelessWidget {
     this.size = 24,
     this.color,
     this.crossAxisAlignment = CrossAxisAlignment.start,
+    this.labelMaxLines = 1,
   });
 
   final String label;
@@ -92,6 +93,10 @@ class NStatValue extends StatelessWidget {
   final Color? color;
   final CrossAxisAlignment crossAxisAlignment;
 
+  /// Raise to 2 for long labels in narrow tiles ("Current streak" in a three-up row), which
+  /// would otherwise be cut to "Current…".
+  final int labelMaxLines;
+
   @override
   Widget build(BuildContext context) {
     final c = context.naali;
@@ -99,7 +104,17 @@ class NStatValue extends StatelessWidget {
       crossAxisAlignment: crossAxisAlignment,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(label, style: NaaliType.caption.copyWith(color: c.textSecondary), maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(
+          label,
+          style: NaaliType.caption.copyWith(color: c.textSecondary),
+          maxLines: labelMaxLines,
+          overflow: TextOverflow.ellipsis,
+          textAlign: switch (crossAxisAlignment) {
+            CrossAxisAlignment.center => TextAlign.center,
+            CrossAxisAlignment.end => TextAlign.end,
+            _ => TextAlign.start,
+          },
+        ),
         const SizedBox(height: 6),
         FittedBox(
           fit: BoxFit.scaleDown,
