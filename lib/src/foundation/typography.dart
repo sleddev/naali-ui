@@ -7,6 +7,10 @@ abstract final class NaaliType {
   static const body = 'packages/naali_ui/Inter';
   static const display = 'packages/naali_ui/InterDisplay';
 
+  /// Headline on a full-screen story or recap page, above [largeTitle].
+  static const hero =
+      TextStyle(fontFamily: display, fontSize: 40, fontWeight: FontWeight.w600, letterSpacing: -1, height: 1.1);
+
   /// Large page title ("Home", "Cards").
   static const largeTitle =
       TextStyle(fontFamily: display, fontSize: 32, fontWeight: FontWeight.w600, letterSpacing: -0.8, height: 1.1);
@@ -24,6 +28,8 @@ abstract final class NaaliType {
   static const navTitle = TextStyle(fontFamily: display, fontSize: 17, fontWeight: FontWeight.w600);
 
   static const headline = TextStyle(fontFamily: body, fontSize: 16, fontWeight: FontWeight.w600, letterSpacing: -0.1);
+  /// Lead paragraph under a [hero] headline, above [bodyLarge].
+  static const lead = TextStyle(fontFamily: body, fontSize: 20, height: 1.4);
   static const bodyLarge = TextStyle(fontFamily: body, fontSize: 16, height: 1.4);
 
   /// List row title.
@@ -35,6 +41,9 @@ abstract final class NaaliType {
   static const caption = TextStyle(fontFamily: body, fontSize: 13, fontWeight: FontWeight.w500);
   static const footnote = TextStyle(fontFamily: body, fontSize: 12.5);
   static const micro = TextStyle(fontFamily: body, fontSize: 11, fontWeight: FontWeight.w500);
+
+  /// Chart axis ticks, a step below [micro].
+  static const chartTick = TextStyle(fontFamily: body, fontSize: 10.5);
 
   static const button = TextStyle(fontFamily: body, fontSize: 16, fontWeight: FontWeight.w600);
 
