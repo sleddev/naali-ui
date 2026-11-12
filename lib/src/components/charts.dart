@@ -235,6 +235,7 @@ class NBreakdownBar extends StatelessWidget {
           child: SizedBox(
             height: height,
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var i = 0; i < segments.length; i++) ...[
                   if (i > 0) SizedBox(width: 2, child: ColoredBox(color: c.surface)),
