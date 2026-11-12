@@ -61,6 +61,109 @@ class NProgressBar extends StatelessWidget {
   }
 }
 
+/// Progress through a fixed number of steps (laps, sets, stages): a row of
+/// equal pills, each filled with its own colour once done. A null colour is a
+/// step still to come; the [activeIndex] one pulses while it is pending.
+class NSegmentBar extends StatefulWidget {
+  const NSegmentBar({super.key, required this.colors, this.activeIndex, this.height = 8, this.labels});
+
+  final List<Color?> colors;
+  final int? activeIndex;
+  final double height;
+
+  /// Optional caption under each segment; same length as [colors].
+  final List<String>? labels;
+
+  @override
+  State<NSegmentBar> createState() => _NSegmentBarState();
+}
+
+class _NSegmentBarState extends State<NSegmentBar> with SingleTickerProviderStateMixin {
+  late final _pulse = AnimationController(vsync: this, duration: const Duration(milliseconds: 900));
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(NSegmentBar old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  bool get _pulsing {
+    final i = widget.activeIndex;
+    return i != null && i >= 0 && i < widget.colors.length && widget.colors[i] == null;
+  }
+
+  void _sync() {
+    // Reduced motion holds the pulse at its midpoint instead of animating.
+    if (_pulsing && !MediaQuery.disableAnimationsOf(context)) {
+      if (!_pulse.isAnimating) _pulse.repeat(reverse: true);
+    } else {
+      _pulse.stop();
+      _pulse.value = 0.5;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.naali;
+    final pending = c.textPrimary.withValues(alpha: 0.14);
+    final labels = widget.labels;
+    Widget pill(Color color) => DecoratedBox(
+          decoration: ShapeDecoration(shape: const StadiumBorder(), color: color),
+          child: SizedBox(height: widget.height),
+        );
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < widget.colors.length; i++) ...[
+          if (i > 0) const SizedBox(width: NaaliSpace.xs),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (i == widget.activeIndex && _pulsing)
+                  AnimatedBuilder(
+                    animation: _pulse,
+                    builder: (_, _) => pill(Color.lerp(pending, c.textPrimary.withValues(alpha: 0.45), _pulse.value)!),
+                  )
+                else
+                  AnimatedContainer(
+                    duration: NaaliMotion.normal,
+                    curve: NaaliMotion.curve,
+                    height: widget.height,
+                    decoration: ShapeDecoration(shape: const StadiumBorder(), color: widget.colors[i] ?? pending),
+                  ),
+                if (labels != null && i < labels.length) ...[
+                  const SizedBox(height: NaaliSpace.xs),
+                  Text(
+                    labels[i],
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: NaaliType.micro.copyWith(color: c.textSecondary),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
 /// Circular progress ring with content in the middle (e.g. "62%").
 class NProgressRing extends StatelessWidget {
   const NProgressRing({super.key, required this.value, this.size = 72, this.stroke = 7, this.color, this.child});
