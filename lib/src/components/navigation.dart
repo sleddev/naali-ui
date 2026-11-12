@@ -344,24 +344,28 @@ class _HeaderBackdrop extends StatelessWidget {
 /// Transparent until content scrolls under it, then a progressive blur fades
 /// in. Set `Scaffold.extendBodyBehindAppBar` so the body actually passes
 /// beneath the bar.
+///
+/// An optional [bottom] row (usually an [NSearchField]) is pinned under the title row; the blur
+/// covers both, so content dissolves below it instead of meeting a hard edge.
 class NTopBar extends StatefulWidget implements PreferredSizeWidget {
-  const NTopBar({super.key, this.title, this.actions = const [], this.onBack, this.showBack = true});
+  const NTopBar({super.key, this.title, this.actions = const [], this.onBack, this.showBack = true, this.bottom});
 
   final String? title;
   final List<Widget> actions;
   final VoidCallback? onBack;
   final bool showBack;
+  final PreferredSizeWidget? bottom;
 
   @override
-  Size get preferredSize => const Size.fromHeight(_kBarHeight);
+  Size get preferredSize => Size.fromHeight(_kBarHeight + (bottom?.preferredSize.height ?? 0));
 
   /// Where a body that scrolls under an [NTopBar] (`Scaffold.extendBodyBehindAppBar`) should
-  /// start its content: below the status bar and the bar.
+  /// start its content: below the status bar and the bar. Pass the bar's [bottom], if it has one.
   ///
   /// Works from a context above the Scaffold or inside its body. Inside the body the Scaffold
   /// strips the status-bar view padding, but `padding.top` then carries the full bar height.
-  static double contentInset(BuildContext context) => math.max(
-        MediaQuery.viewPaddingOf(context).top + _kBarHeight,
+  static double contentInset(BuildContext context, {PreferredSizeWidget? bottom}) => math.max(
+        MediaQuery.viewPaddingOf(context).top + _kBarHeight + (bottom?.preferredSize.height ?? 0),
         MediaQuery.paddingOf(context).top,
       );
 
@@ -398,6 +402,35 @@ class _NTopBarState extends State<NTopBar> {
   Widget build(BuildContext context) {
     final c = context.naali;
     final canPop = widget.showBack && (widget.onBack != null || Navigator.of(context).canPop());
+    final bar = SizedBox(
+      height: _kBarHeight,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: NaaliSpace.page),
+        child: Row(
+          children: [
+            if (canPop) ...[
+              NGlassIconButton(
+                icon: Icons.arrow_back_rounded,
+                tooltip: 'Back',
+                onPressed: widget.onBack ?? () => Navigator.of(context).maybePop(),
+              ),
+              const SizedBox(width: 14),
+            ],
+            Expanded(
+              child: widget.title == null
+                  ? const SizedBox.shrink()
+                  : Text(
+                      widget.title!,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: NaaliType.barTitle.copyWith(color: c.textPrimary),
+                    ),
+            ),
+            for (final a in widget.actions) ...[const SizedBox(width: 8), a],
+          ],
+        ),
+      ),
+    );
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -408,35 +441,9 @@ class _NTopBarState extends State<NTopBar> {
         ),
         SafeArea(
           bottom: false,
-          child: SizedBox(
-            height: _kBarHeight,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: NaaliSpace.page),
-              child: Row(
-                children: [
-                  if (canPop) ...[
-                    NGlassIconButton(
-                      icon: Icons.arrow_back_rounded,
-                      tooltip: 'Back',
-                      onPressed: widget.onBack ?? () => Navigator.of(context).maybePop(),
-                    ),
-                    const SizedBox(width: 14),
-                  ],
-                  Expanded(
-                    child: widget.title == null
-                        ? const SizedBox.shrink()
-                        : Text(
-                            widget.title!,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: NaaliType.barTitle.copyWith(color: c.textPrimary),
-                          ),
-                  ),
-                  for (final a in widget.actions) ...[const SizedBox(width: 8), a],
-                ],
-              ),
-            ),
-          ),
+          child: widget.bottom == null
+              ? bar
+              : Column(mainAxisSize: MainAxisSize.min, children: [bar, widget.bottom!]),
         ),
       ],
     );
