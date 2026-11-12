@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../foundation/colors.dart';
 import '../foundation/tokens.dart';
+import '../foundation/typography.dart';
+import 'buttons.dart';
 
 /// Pill toggle with a white thumb that slides over an accent track.
 class NSwitch extends StatelessWidget {
@@ -157,4 +159,58 @@ class NPageDots extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Minus / value / plus control for servings, counts and quantities. A null callback disables
+/// its button (at a limit). Screen readers hear [value] and the two buttons' tooltips.
+class NStepper extends StatelessWidget {
+  const NStepper({
+    super.key,
+    required this.value,
+    required this.onDecrement,
+    required this.onIncrement,
+    this.child,
+    this.valueMinWidth = 32,
+    this.decrementTooltip = 'Decrease',
+    this.incrementTooltip = 'Increase',
+  });
+
+  /// Shown between the buttons and read out by screen readers.
+  final String value;
+  final VoidCallback? onDecrement;
+  final VoidCallback? onIncrement;
+
+  /// Replaces the default figure (e.g. a large serif number with its unit); [value] is still
+  /// what screen readers announce.
+  final Widget? child;
+
+  /// Narrowest the value slot gets, so the buttons don't shift as a short value changes.
+  final double valueMinWidth;
+  final String decrementTooltip;
+  final String incrementTooltip;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+        container: true,
+        value: value,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            NIconButton(icon: Icons.remove_rounded, size: 36, tooltip: decrementTooltip, onPressed: onDecrement),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: BoxConstraints(minWidth: valueMinWidth),
+              child: ExcludeSemantics(
+                child: Center(
+                  widthFactor: 1,
+                  child: child ??
+                      Text(value, textAlign: TextAlign.center, style: NaaliType.number(20, color: context.naali.textPrimary)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            NIconButton(icon: Icons.add_rounded, size: 36, tooltip: incrementTooltip, onPressed: onIncrement),
+          ],
+        ),
+      );
 }
