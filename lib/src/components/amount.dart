@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../foundation/colors.dart';
+import '../foundation/tokens.dart';
 import '../foundation/typography.dart';
 
 /// Minimal money formatting without intl: "€1,234.50", "-£8.00", "+$12".
@@ -176,6 +177,42 @@ class NDeltaChip extends StatelessWidget {
           Text(text, style: NaaliType.caption.copyWith(color: color)),
         ],
       ),
+    );
+  }
+}
+
+/// Large signed figure ("−0.42", "+1.07") coloured like [NDeltaChip] but
+/// without the pill, for a live readout such as a lap delta. Shows
+/// [placeholder] in the secondary colour while [text] is null.
+class NDeltaReadout extends StatelessWidget {
+  const NDeltaReadout({
+    super.key,
+    required this.text,
+    required this.direction,
+    this.positiveIsGood,
+    this.size = 44,
+    this.placeholder = '—',
+  });
+
+  final String? text;
+
+  /// -1 down, 0 flat, 1 up.
+  final int direction;
+
+  /// Null keeps it neutral; otherwise green/red by direction.
+  final bool? positiveIsGood;
+  final double size;
+  final String placeholder;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.naali;
+    final good = text == null || positiveIsGood == null || direction == 0 ? null : (direction > 0) == positiveIsGood;
+    final color = good == null ? c.textSecondary : (good ? c.success : c.danger);
+    return AnimatedDefaultTextStyle(
+      duration: NaaliMotion.fast,
+      style: NaaliType.number(size, weight: FontWeight.w700, color: color),
+      child: Text(text ?? placeholder, maxLines: 1),
     );
   }
 }
