@@ -237,6 +237,73 @@ class NListGroup extends StatelessWidget {
   }
 }
 
+/// [NListGroup] as a sliver whose rows are built lazily, for long lists (search results, feeds)
+/// in a [CustomScrollView]. Reads as one card, like [NListGroup].
+class NSliverListGroup extends StatelessWidget {
+  const NSliverListGroup.builder({
+    super.key,
+    required this.itemCount,
+    required this.itemBuilder,
+    this.dividers = false,
+    this.dividerIndent = 70,
+    this.title,
+    this.color,
+  });
+
+  final int itemCount;
+  final NullableIndexedWidgetBuilder itemBuilder;
+  final bool dividers;
+
+  /// Left inset of [dividers]; 70 aligns with text after a 40px avatar. Use 16 without avatars.
+  final double dividerIndent;
+  final String? title;
+
+  /// Card fill; defaults to the surface colour. Use `surfaceRaised` inside sheets.
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.naali;
+    final offset = title == null ? 0 : 1;
+    final count = itemCount == 0 ? 0 : itemCount + offset;
+    const r = Radius.circular(NaaliRadius.card);
+    return SliverList.builder(
+      itemCount: count,
+      itemBuilder: (context, i) {
+        final first = i == 0;
+        final last = i == count - 1;
+        final Widget row;
+        if (i < offset) {
+          row = Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 2),
+            child: Text(title!, style: NaaliType.bodyText.copyWith(color: c.textSecondary, height: 1.2)),
+          );
+        } else {
+          final item = itemBuilder(context, i - offset);
+          if (item == null) return null;
+          row = dividers && i > offset
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [Divider(indent: dividerIndent, endIndent: 16, height: 1), item],
+                )
+              : item;
+        }
+        // Each row paints its slice of the card: rounded only at the ends, with the group's
+        // vertical padding on the first and last.
+        return Material(
+          color: color ?? c.surface,
+          clipBehavior: Clip.antiAlias,
+          borderRadius: BorderRadius.vertical(top: first ? r : Radius.zero, bottom: last ? r : Radius.zero),
+          child: Padding(
+            padding: EdgeInsets.only(top: first ? 6 : 0, bottom: last ? 6 : 0),
+            child: row,
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Label-left / value-right row for secondary figures. Use inside [NDetailGroup].
 ///
 /// Tappable values ("To the moon ··9344", "Download") take [valueColor] of
