@@ -10,8 +10,23 @@ import 'buttons.dart';
 import 'inputs.dart';
 import 'pressable.dart';
 
+/// Height of the grabber strip at the top of an [showNSheet]: the gap above the grabber plus the
+/// grabber itself. Content of a sheet with `grabberOverContent` pads its top by this much to keep
+/// the usual spacing.
+const double nSheetGrabberExtent = 12;
+
 /// Solid modal bottom sheet with a grabber. Dialogs in Naali are sheets.
-Future<T?> showNSheet<T>(BuildContext context, {required WidgetBuilder builder, bool scrollControlled = true}) {
+///
+/// The grabber normally sits in a surface-coloured strip above the content. With
+/// [grabberOverContent] the content starts at the sheet's top edge and the grabber floats over
+/// it, so a sheet that paints its own background (a glow, a gradient) isn't cut off; pad the
+/// content's top by [nSheetGrabberExtent].
+Future<T?> showNSheet<T>(
+  BuildContext context, {
+  required WidgetBuilder builder,
+  bool scrollControlled = true,
+  bool grabberOverContent = false,
+}) {
   final c = context.naali;
   return showModalBottomSheet<T>(
     context: context,
@@ -29,23 +44,37 @@ Future<T?> showNSheet<T>(BuildContext context, {required WidgetBuilder builder, 
           color: c.surface,
           child: SafeArea(
             top: false,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const SizedBox(height: 8),
-                Container(
-                  width: 36,
-                  height: 4,
-                  decoration: BoxDecoration(color: c.surfaceRaised, borderRadius: BorderRadius.circular(2)),
-                ),
-                Flexible(child: builder(ctx)),
-              ],
-            ),
+            child: grabberOverContent
+                ? Stack(
+                    children: [
+                      builder(ctx),
+                      const Positioned(top: 8, left: 0, right: 0, child: Center(child: _Grabber())),
+                    ],
+                  )
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 8),
+                      const _Grabber(),
+                      Flexible(child: builder(ctx)),
+                    ],
+                  ),
           ),
         ),
       ),
     ),
   );
+}
+
+class _Grabber extends StatelessWidget {
+  const _Grabber();
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: 36,
+        height: nSheetGrabberExtent - 8,
+        decoration: BoxDecoration(color: context.naali.surfaceRaised, borderRadius: BorderRadius.circular(2)),
+      );
 }
 
 /// Title (and optional note) at the top of a sheet.
