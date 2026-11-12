@@ -404,3 +404,90 @@ class _NTopBarState extends State<NTopBar> {
     );
   }
 }
+
+/// Tab bodies for an [NNavBar] shell. Keeps every tab alive like an [IndexedStack] (state and
+/// scroll position survive), but fades through when [index] changes: the old tab fades out, then
+/// the new one fades in while settling from a slight zoom. Switches instantly when the platform
+/// asks for reduced motion.
+class NTabStack extends StatefulWidget {
+  const NTabStack({super.key, required this.index, required this.children, this.zoom = 0.96});
+
+  final int index;
+  final List<Widget> children;
+
+  /// Scale the incoming tab starts from.
+  final double zoom;
+
+  @override
+  State<NTabStack> createState() => _NTabStackState();
+}
+
+class _NTabStackState extends State<NTabStack> with SingleTickerProviderStateMixin {
+  late final _controller = AnimationController(vsync: this, duration: NaaliMotion.slow, value: 1)
+    ..addStatusListener((_) => setState(() {}));
+  late int _previous = widget.index;
+
+  // Fade-through: the outgoing tab is gone by 35%, the incoming one takes the rest.
+  late final _fadeOutCurve = CurvedAnimation(parent: _controller, curve: const Interval(0, 0.35, curve: Curves.easeIn));
+  late final _fadeIn = CurvedAnimation(parent: _controller, curve: const Interval(0.35, 1, curve: NaaliMotion.curve));
+  late final Animation<double> _fadeOut = ReverseAnimation(_fadeOutCurve);
+  late final Animation<double> _zoomIn = Tween<double>(begin: widget.zoom, end: 1).animate(_fadeIn);
+
+  @override
+  void didUpdateWidget(NTabStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.index == widget.index) return;
+    _previous = oldWidget.index;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.value = 1;
+    } else {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _fadeOutCurve.dispose();
+    _fadeIn.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final animating = _controller.isAnimating;
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        for (var i = 0; i < widget.children.length; i++)
+          _tab(i, current: i == widget.index, leaving: animating && i == _previous),
+      ],
+    );
+  }
+
+  Widget _tab(int i, {required bool current, required bool leaving}) {
+    // Same widget shape for every tab in every state, so switching never remounts a tab's
+    // navigator; only the animations driving it change.
+    return Offstage(
+      key: ValueKey(i),
+      offstage: !current && !leaving,
+      child: TickerMode(
+        enabled: current || leaving,
+        child: IgnorePointer(
+          ignoring: !current,
+          child: FadeTransition(
+            opacity: current
+                ? _fadeIn
+                : leaving
+                    ? _fadeOut
+                    : kAlwaysCompleteAnimation,
+            child: ScaleTransition(
+              scale: current ? _zoomIn : kAlwaysCompleteAnimation,
+              child: widget.children[i],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
