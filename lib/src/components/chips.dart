@@ -200,7 +200,7 @@ class NSegmentedControl<T> extends StatelessWidget {
                   child: DecoratedBox(
                     decoration: ShapeDecoration(
                       shape: const StadiumBorder(),
-                      color: c.isDark ? const Color(0xFF3A3B41) : Colors.white,
+                      color: c.segmentThumb,
                       shadows: c.isDark
                           ? null
                           : const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 1))],

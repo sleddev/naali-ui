@@ -30,7 +30,10 @@ class NaaliColors extends ThemeExtension<NaaliColors> {
     required this.glassFillStrong,
     required this.glassBorder,
     required this.scrim,
-  });
+    Color? segmentThumb,
+    // Named parameters can't be private, so this can't be an initializing formal.
+    // ignore: prefer_initializing_formals
+  }) : _segmentThumb = segmentThumb;
 
   final Brightness brightness;
 
@@ -74,6 +77,11 @@ class NaaliColors extends ThemeExtension<NaaliColors> {
   final Color glassFillStrong;
   final Color glassBorder;
   final Color scrim;
+
+  /// Sliding thumb of [NSegmentedControl] and similar controls, on a [surfaceRaised] track.
+  /// Defaults to a lifted grey in dark mode and white in light mode.
+  Color get segmentThumb => _segmentThumb ?? (isDark ? const Color(0xFF3A3B41) : const Color(0xFFFFFFFF));
+  final Color? _segmentThumb;
 
   bool get isDark => brightness == Brightness.dark;
 
@@ -156,6 +164,7 @@ class NaaliColors extends ThemeExtension<NaaliColors> {
     Color? glassFillStrong,
     Color? glassBorder,
     Color? scrim,
+    Color? segmentThumb,
   }) =>
       NaaliColors(
         brightness: brightness,
@@ -181,6 +190,7 @@ class NaaliColors extends ThemeExtension<NaaliColors> {
         glassFillStrong: glassFillStrong ?? this.glassFillStrong,
         glassBorder: glassBorder ?? this.glassBorder,
         scrim: scrim ?? this.scrim,
+        segmentThumb: segmentThumb ?? _segmentThumb,
       );
 
   @override
@@ -211,6 +221,7 @@ class NaaliColors extends ThemeExtension<NaaliColors> {
       glassFillStrong: l(glassFillStrong, other.glassFillStrong),
       glassBorder: l(glassBorder, other.glassBorder),
       scrim: l(scrim, other.scrim),
+      segmentThumb: l(segmentThumb, other.segmentThumb),
     );
   }
 }
