@@ -130,6 +130,29 @@ class NSheetHeader extends StatelessWidget {
   }
 }
 
+/// Standard body for an [showNSheet]: an optional [NSheetHeader], then [child] inset 20 from the
+/// sheet's sides. The child is [Flexible], so a scroll view in it scrolls instead of overflowing.
+class NSheetBody extends StatelessWidget {
+  const NSheetBody({super.key, this.title, this.subtitle, required this.child});
+
+  final String? title;
+  final String? subtitle;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 12, 4, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (title != null) ...[NSheetHeader(title!, subtitle: subtitle), const SizedBox(height: 8)],
+            Flexible(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: child)),
+          ],
+        ),
+      );
+}
+
 /// Confirmation sheet with full-width pill buttons. Resolves true on confirm.
 Future<bool> showNConfirmSheet(
   BuildContext context, {
