@@ -18,14 +18,52 @@ class NNavItem {
 /// Floating glass tab bar with a lozenge that slides to the selected tab.
 /// Put it in `Scaffold.bottomNavigationBar` with `extendBody: true`.
 class NNavBar extends StatelessWidget {
-  const NNavBar({super.key, required this.items, required this.index, required this.onTap});
+  const NNavBar({
+    super.key,
+    required this.items,
+    required this.index,
+    required this.onTap,
+    this.scrim = false,
+    this.scrimExtent = NaaliSpace.xxl,
+  });
 
   final List<NNavItem> items;
   final int index;
   final ValueChanged<int> onTap;
 
+  /// Fades page content out under the bar, so rows don't show through the gaps beside and
+  /// below the pill. The fade starts [scrimExtent] above the bar and reaches the canvas colour
+  /// at the bottom edge. It ignores touches, so content under its clear top stays tappable.
+  final bool scrim;
+  final double scrimExtent;
+
   @override
   Widget build(BuildContext context) {
+    final bar = _bar(context);
+    if (!scrim) return bar;
+    final bg = context.naali.background;
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [bg.withValues(alpha: 0), bg.withValues(alpha: 0.9), bg],
+                  stops: const [0, 0.35, 0.7],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Padding(padding: EdgeInsets.only(top: scrimExtent), child: bar),
+      ],
+    );
+  }
+
+  Widget _bar(BuildContext context) {
     final c = context.naali;
     return SafeArea(
       minimum: const EdgeInsets.fromLTRB(24, 0, 24, 8),
