@@ -273,3 +273,191 @@ class NBreakdownBar extends StatelessWidget {
     );
   }
 }
+
+/// One line of a [NChartTip]: an optional series swatch and name, then the value.
+class NChartTipRow {
+  const NChartTipRow(this.value, {this.label, this.color, this.dashed = false});
+  final String value;
+  final String? label;
+
+  /// Series colour, shown as a swatch. Leave null on single-series charts.
+  final Color? color;
+
+  /// Draws the swatch as a short dashed line, for series drawn dashed.
+  final bool dashed;
+}
+
+/// What a [NChartTooltip] shows, and where.
+class NChartTip {
+  const NChartTip({required this.anchor, required this.rows, this.title});
+
+  /// The point the tip is about, in the [NChartTooltip]'s local coordinates.
+  final Offset anchor;
+  final String? title;
+  final List<NChartTipRow> rows;
+}
+
+/// Hosts a chart and floats its tooltip in the app overlay, so a clipping card around the chart
+/// can't cut it off. The tip sits above its anchor, flips below when there's no room, and stays
+/// inside the screen gutters. Works with any chart: map a touch to an anchor in this widget's
+/// coordinates and the rows to show.
+class NChartTooltip extends StatefulWidget {
+  const NChartTooltip({super.key, required this.builder});
+
+  /// Builds the chart; call `show` from its touch callback with a tip, or null to hide it.
+  final Widget Function(BuildContext context, ValueChanged<NChartTip?> show) builder;
+
+  @override
+  State<NChartTooltip> createState() => _NChartTooltipState();
+}
+
+class _NChartTooltipState extends State<NChartTooltip> {
+  final _portal = OverlayPortalController();
+  final _tip = ValueNotifier<NChartTip?>(null);
+
+  // Kept while the tip fades out after the finger lifts.
+  NChartTip? _last;
+
+  void _show(NChartTip? tip) {
+    if (tip != null) {
+      _last = tip;
+      if (!_portal.isShowing) _portal.show();
+    }
+    _tip.value = tip;
+  }
+
+  @override
+  void dispose() {
+    _tip.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => OverlayPortal(
+        controller: _portal,
+        overlayChildBuilder: (overlayContext) => ValueListenableBuilder(
+          valueListenable: _tip,
+          builder: (_, tip, _) {
+            final shown = tip ?? _last;
+            final host = context.findRenderObject() as RenderBox?;
+            final overlay = Overlay.of(context).context.findRenderObject() as RenderBox?;
+            if (shown == null || host == null || overlay == null || !host.attached) return const SizedBox();
+            final anchor = host.localToGlobal(shown.anchor, ancestor: overlay);
+            return IgnorePointer(
+              child: CustomSingleChildLayout(
+                delegate: _ChartTipLayout(anchor, MediaQuery.paddingOf(context)),
+                child: AnimatedOpacity(
+                  opacity: tip == null ? 0 : 1,
+                  duration: NaaliMotion.fast,
+                  curve: NaaliMotion.curve,
+                  onEnd: () {
+                    if (_tip.value == null && _portal.isShowing) _portal.hide();
+                  },
+                  child: _ChartTipCard(shown),
+                ),
+              ),
+            );
+          },
+        ),
+        child: widget.builder(context, _show),
+      );
+}
+
+class _ChartTipLayout extends SingleChildLayoutDelegate {
+  _ChartTipLayout(this.anchor, this.safe);
+  final Offset anchor;
+  final EdgeInsets safe;
+
+  static const _gap = NaaliSpace.md;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      BoxConstraints.loose(constraints.biggest).deflate(const EdgeInsets.all(NaaliSpace.page));
+
+  @override
+  Offset getPositionForChild(Size size, Size child) {
+    final x = (anchor.dx - child.width / 2)
+        .clamp(NaaliSpace.page, (size.width - child.width - NaaliSpace.page).clamp(NaaliSpace.page, double.infinity));
+    final above = anchor.dy - _gap - child.height;
+    final y = above >= safe.top + NaaliSpace.sm ? above : anchor.dy + _gap;
+    return Offset(x.toDouble(), y);
+  }
+
+  @override
+  bool shouldRelayout(_ChartTipLayout old) => old.anchor != anchor || old.safe != safe;
+}
+
+class _ChartTipCard extends StatelessWidget {
+  const _ChartTipCard(this.tip);
+  final NChartTip tip;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.naali;
+    final muted = c.onInverse.withValues(alpha: 0.62);
+    final title = tip.title;
+    final swatches = tip.rows.any((r) => r.color != null);
+    final labels = tip.rows.any((r) => r.label != null);
+    return Container(
+      constraints: const BoxConstraints(maxWidth: 240),
+      padding: const EdgeInsets.fromLTRB(NaaliSpace.md, NaaliSpace.sm, NaaliSpace.md, NaaliSpace.sm),
+      decoration: BoxDecoration(
+        color: c.inverse,
+        borderRadius: BorderRadius.circular(NaaliRadius.sm),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (title != null) ...[
+            Text(title, style: NaaliType.micro.copyWith(color: muted)),
+            const SizedBox(height: NaaliSpace.xs),
+          ],
+          Table(
+            defaultColumnWidth: const IntrinsicColumnWidth(),
+            defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+            children: [
+              for (final (i, r) in tip.rows.indexed)
+                TableRow(children: [
+                  if (swatches)
+                    _tipCell(i, NaaliSpace.sm, r.color == null ? const SizedBox() : _ChartTipSwatch(r.color!, dashed: r.dashed)),
+                  if (labels) _tipCell(i, NaaliSpace.md, Text(r.label ?? '', style: NaaliType.caption.copyWith(color: muted))),
+                  _tipCell(
+                    i,
+                    0,
+                    Text(
+                      r.value,
+                      textAlign: labels ? TextAlign.right : TextAlign.left,
+                      style: NaaliType.number(i == 0 ? 15 : 13, color: c.onInverse),
+                    ),
+                  ),
+                ]),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Rows after the first get a little air above; [right] separates the cell from the next column.
+Widget _tipCell(int row, double right, Widget child) =>
+    Padding(padding: EdgeInsets.only(top: row == 0 ? 0 : NaaliSpace.xs, right: right), child: child);
+
+class _ChartTipSwatch extends StatelessWidget {
+  const _ChartTipSwatch(this.color, {this.dashed = false});
+  final Color color;
+  final bool dashed;
+
+  @override
+  Widget build(BuildContext context) => dashed
+      ? Row(mainAxisSize: MainAxisSize.min, children: [
+          _dash(),
+          const SizedBox(width: NaaliSpace.xxs),
+          _dash(),
+        ])
+      : Container(width: 10, height: 10, decoration: BoxDecoration(color: color, shape: BoxShape.circle));
+
+  Widget _dash() =>
+      Container(width: 4, height: 2.5, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(1)));
+}
