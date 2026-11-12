@@ -3,30 +3,41 @@ import 'package:flutter/material.dart';
 import '../foundation/colors.dart';
 import '../foundation/typography.dart';
 
-/// Round avatar for list rows and headers: initials, an icon, or an image.
+/// Round avatar for list rows and headers: initials, an icon, an emoji, or an image.
 /// An optional [badge] (flag, status icon, card brand) sits on the bottom-right edge.
 class NAvatar extends StatelessWidget {
   const NAvatar.initials(String name, {super.key, this.size = 40, this.color, this.badge})
       : _name = name,
+        _emoji = null,
         icon = null,
         image = null;
 
   const NAvatar.icon(IconData this.icon, {super.key, this.size = 40, this.color, this.badge})
       : _name = null,
+        _emoji = null,
+        image = null;
+
+  /// An emoji in place of the icon: habits, categories, badges. Neutral grey unless [color] tints it.
+  const NAvatar.emoji(String emoji, {super.key, this.size = 40, this.color, this.badge})
+      : _name = null,
+        _emoji = emoji,
+        icon = null,
         image = null;
 
   const NAvatar.image(ImageProvider this.image, {super.key, this.size = 40, this.badge})
       : _name = null,
+        _emoji = null,
         icon = null,
         color = null;
 
   final String? _name;
+  final String? _emoji;
   final IconData? icon;
   final ImageProvider? image;
   final double size;
 
-  /// Tint for initials/icon avatars. Initials pick one from the name when null;
-  /// icon avatars stay neutral grey.
+  /// Tint for initials/icon/emoji avatars. Initials pick one from the name when null;
+  /// icon and emoji avatars stay neutral grey.
   final Color? color;
   final Widget? badge;
 
@@ -56,10 +67,13 @@ class NAvatar extends StatelessWidget {
         ),
         child: icon != null
             ? Icon(icon, size: size * 0.5, color: tint ?? c.textPrimary)
-            : Text(
-                initialsOf(_name!),
-                style: NaaliType.number(size * 0.38, color: tint ?? c.textPrimary).copyWith(letterSpacing: 0),
-              ),
+            : _emoji != null
+                // Decorative: the row's label says what it is.
+                ? ExcludeSemantics(child: Text(_emoji, style: TextStyle(fontSize: size * 0.5, height: 1)))
+                : Text(
+                    initialsOf(_name!),
+                    style: NaaliType.number(size * 0.38, color: tint ?? c.textPrimary).copyWith(letterSpacing: 0),
+                  ),
       );
     }
     if (badge == null) return SizedBox.square(dimension: size, child: circle);
