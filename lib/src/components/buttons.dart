@@ -210,17 +210,31 @@ class NCircleAction extends StatelessWidget {
   }
 }
 
-/// Evenly spaced row of [NCircleAction]s.
+/// Evenly spaced row of [NCircleAction]s. Scales down to fit when the actions are wider than
+/// the row (five on a narrow phone) instead of overflowing.
 class NActionRow extends StatelessWidget {
   const NActionRow({super.key, required this.actions});
   final List<NCircleAction> actions;
 
   @override
-  Widget build(BuildContext context) => Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: actions,
-      );
+  Widget build(BuildContext context) {
+    final row = Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: actions,
+    );
+    return LayoutBuilder(
+      builder: (context, box) {
+        // Each action is its circle plus 24 of room for the label (see [NCircleAction]).
+        final needed = actions.fold<double>(0, (sum, a) => sum + a.size + 24);
+        if (!box.hasBoundedWidth || needed <= box.maxWidth) return row;
+        return FittedBox(
+          fit: BoxFit.scaleDown,
+          child: SizedBox(width: needed, child: row),
+        );
+      },
+    );
+  }
 }
 
 /// Small accent text action for section headers ("See all").
