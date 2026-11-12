@@ -253,3 +253,45 @@ class NLinkButton extends StatelessWidget {
         ),
       );
 }
+
+/// Icon and short label with no fill, for secondary settings under the main
+/// controls ("Now", "Note", "Private"). Grey at rest and accent once [active],
+/// so a changed setting reads at a glance without competing with the pills.
+class NQuietAction extends StatelessWidget {
+  const NQuietAction({super.key, required this.icon, required this.label, required this.onTap, this.active = false});
+
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  final bool active;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.naali;
+    final color = active ? c.accent : c.textSecondary;
+    return Semantics(
+      selected: active,
+      child: NPressable(
+        onTap: onTap,
+        scale: 0.95,
+        child: Padding(
+          padding: const EdgeInsets.all(NaaliSpace.sm),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: NaaliSpace.xs + NaaliSpace.xxs),
+              Flexible(
+                child: AnimatedDefaultTextStyle(
+                  duration: NaaliMotion.fast,
+                  style: NaaliType.callout.copyWith(color: color, fontWeight: FontWeight.w500),
+                  child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
