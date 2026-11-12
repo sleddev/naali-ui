@@ -17,6 +17,7 @@ export 'src/components/chips.dart';
 export 'src/components/controls.dart';
 export 'src/components/feedback.dart';
 export 'src/components/inputs.dart';
+export 'src/components/layout.dart';
 export 'src/components/lists.dart';
 export 'src/components/navigation.dart';
 export 'src/components/payment_card.dart';
