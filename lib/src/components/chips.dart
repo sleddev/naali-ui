@@ -4,6 +4,7 @@ import '../foundation/colors.dart';
 import '../foundation/tokens.dart';
 import '../foundation/typography.dart';
 import 'pressable.dart';
+import 'surfaces.dart';
 
 /// Pill filter chip: inverse (white on dark) when selected, raised grey otherwise.
 class NPillChip extends StatelessWidget {
@@ -158,6 +159,7 @@ class NSegmentedControl<T> extends StatelessWidget {
     this.height = 40,
     this.icon,
     this.onDeselect,
+    this.glass = false,
   });
 
   final List<T> values;
@@ -174,85 +176,99 @@ class NSegmentedControl<T> extends StatelessWidget {
   /// Makes the choice optional: tapping the selected segment calls this.
   final VoidCallback? onDeselect;
 
+  /// Frosted track with an accent thumb, matching [NGlassIconButton], for a
+  /// mode switch floating over a map or other content.
+  final bool glass;
+
   @override
   Widget build(BuildContext context) {
     final c = context.naali;
     final index = selected == null ? -1 : values.indexOf(selected as T);
-    return Container(
-      height: height,
-      padding: const EdgeInsets.all(3),
-      decoration: ShapeDecoration(shape: const StadiumBorder(), color: c.surfaceRaised),
-      child: LayoutBuilder(
-        builder: (context, box) {
-          final w = box.maxWidth / values.length;
-          return Stack(
-            children: [
-              AnimatedPositioned(
-                duration: NaaliMotion.normal,
-                curve: NaaliMotion.curve,
-                left: w * (index < 0 ? 0 : index),
-                top: 0,
-                bottom: 0,
-                width: w,
-                child: AnimatedOpacity(
-                  opacity: index < 0 ? 0 : 1,
-                  duration: NaaliMotion.fast,
-                  child: DecoratedBox(
-                    decoration: ShapeDecoration(
-                      shape: const StadiumBorder(),
-                      color: c.segmentThumb,
-                      shadows: c.isDark
-                          ? null
-                          : const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 1))],
-                    ),
+    final thumb = glass ? c.accent : c.segmentThumb;
+    Color fg(bool on) => on ? (glass ? c.onAccent : c.textPrimary) : (glass ? c.textPrimary : c.textSecondary);
+    final segments = LayoutBuilder(
+      builder: (context, box) {
+        final w = box.maxWidth / values.length;
+        return Stack(
+          children: [
+            AnimatedPositioned(
+              duration: NaaliMotion.normal,
+              curve: NaaliMotion.curve,
+              left: w * (index < 0 ? 0 : index),
+              top: 0,
+              bottom: 0,
+              width: w,
+              child: AnimatedOpacity(
+                opacity: index < 0 ? 0 : 1,
+                duration: NaaliMotion.fast,
+                child: DecoratedBox(
+                  decoration: ShapeDecoration(
+                    shape: const StadiumBorder(),
+                    color: thumb,
+                    shadows: c.isDark || glass
+                        ? null
+                        : const [BoxShadow(color: Color(0x14000000), blurRadius: 6, offset: Offset(0, 1))],
                   ),
                 ),
               ),
-              Row(
-                children: [
-                  for (var i = 0; i < values.length; i++)
-                    Expanded(
-                      child: Semantics(
-                        selected: i == index,
-                        button: true,
-                        child: GestureDetector(
-                          behavior: HitTestBehavior.opaque,
-                          onTap: () {
-                            if (i == index && onDeselect == null) return;
-                            NaaliHaptics.tap();
-                            i == index ? onDeselect!() : onChanged(values[i]);
-                          },
-                          child: Center(
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (icon?.call(values[i]) case final ic?) ...[
-                                  Icon(ic, size: 18, color: i == index ? c.textPrimary : c.textSecondary),
-                                  const SizedBox(width: 6),
-                                ],
-                                Flexible(
-                                  child: AnimatedDefaultTextStyle(
-                                    duration: NaaliMotion.fast,
-                                    style: NaaliType.callout.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                      height: 1.1,
-                                      color: i == index ? c.textPrimary : c.textSecondary,
-                                    ),
-                                    child: Text(label(values[i]), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                  ),
-                                ),
+            ),
+            Row(
+              children: [
+                for (var i = 0; i < values.length; i++)
+                  Expanded(
+                    child: Semantics(
+                      selected: i == index,
+                      button: true,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () {
+                          if (i == index && onDeselect == null) return;
+                          NaaliHaptics.tap();
+                          i == index ? onDeselect!() : onChanged(values[i]);
+                        },
+                        child: Center(
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (icon?.call(values[i]) case final ic?) ...[
+                                Icon(ic, size: 18, color: fg(i == index)),
+                                const SizedBox(width: 6),
                               ],
-                            ),
+                              Flexible(
+                                child: AnimatedDefaultTextStyle(
+                                  duration: NaaliMotion.fast,
+                                  style: NaaliType.callout.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.1,
+                                    color: fg(i == index),
+                                  ),
+                                  child: Text(label(values[i]), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                ],
-              ),
-            ],
-          );
-        },
-      ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+    if (glass) {
+      return NGlass(
+        radius: height / 2,
+        padding: const EdgeInsets.all(3),
+        child: SizedBox(height: height - 6, child: segments),
+      );
+    }
+    return Container(
+      height: height,
+      padding: const EdgeInsets.all(3),
+      decoration: ShapeDecoration(shape: const StadiumBorder(), color: c.surfaceRaised),
+      child: segments,
     );
   }
 }

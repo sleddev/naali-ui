@@ -45,4 +45,32 @@ void main() {
     await tester.pumpAndSettle();
     expect(thumbColor(tester), warm);
   });
+
+  testWidgets('NSegmentedControl glass: frosted track, accent thumb, label on accent', (tester) async {
+    var picked = 0;
+    await tester.pumpWidget(MaterialApp(
+      theme: NaaliTheme.light(),
+      home: Center(
+        child: SizedBox(
+          width: 300,
+          child: NSegmentedControl<int>(
+            values: const [0, 1],
+            selected: 0,
+            label: (v) => 'Mode $v',
+            onChanged: (v) => picked = v,
+            glass: true,
+          ),
+        ),
+      ),
+    ));
+    expect(find.byType(NGlass), findsOneWidget);
+    expect(tester.getSize(find.byType(NSegmentedControl<int>)).height, 40);
+    expect(thumbColor(tester), NaaliColors.light.accent);
+    final label = tester.widget<AnimatedDefaultTextStyle>(
+      find.ancestor(of: find.text('Mode 0'), matching: find.byType(AnimatedDefaultTextStyle)),
+    );
+    expect(label.style.color, NaaliColors.light.onAccent);
+    await tester.tap(find.text('Mode 1'));
+    expect(picked, 1);
+  });
 }
